@@ -23,7 +23,7 @@ export default function OpenSourceBanner() {
   return (
     <div className="fixed top-0 left-0 right-0 w-full h-6 bg-muted border-b flex items-center justify-center px-4 text-xs z-[60]">
       <div className="flex items-center gap-2">
-        <span className="text-orange-500">This blog repo is open source</span>
+        <span className="text-orange-500">This support repo is open source</span>
         <a
           href="https://github.com/replyke/launch-kit"
           target="_blank"
