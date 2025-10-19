@@ -8,7 +8,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <OpenSourceBanner />
       <Header />
 
-      <main className="flex-1 py-24 px-4">{children}</main>
+      <main className="flex-1 py-28 px-4">{children}</main>
       <Footer />
     </div>
   );
