@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuth, useUser } from "@replyke/react-js";
+import { useUser, useAuth as useAuthReplyke } from "@replyke/react-js";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +14,12 @@ import { Button } from "@/components/ui/button";
 import UserAvatar from "./UserAvatar";
 import ShinyButton from "./ShinyButton";
 import { AuthDialog } from "../../AuthDialog";
+import useAuth from "../../../hooks/useAuth";
 
 function AvatarDropdown() {
   const { signOut } = useAuth();
+  const { signOut: signOutReplyke } = useAuthReplyke();
+
   const { user } = useUser();
   const [open, setOpen] = useState(false);
 
@@ -72,6 +75,7 @@ function AvatarDropdown() {
         <DropdownMenuItem
           onClick={() => {
             signOut?.();
+            signOutReplyke();
           }}
           className="cursor-pointer"
         >

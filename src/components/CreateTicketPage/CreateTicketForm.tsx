@@ -15,16 +15,14 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
-import { validateTicketForm, isAdminOrEditor } from "@/lib/ticket-helpers";
+import { validateTicketForm, getTicketPath } from "@/lib/ticket-helpers";
 import {
   TICKET_CATEGORY_OPTIONS,
-  TICKET_PRIORITY_OPTIONS,
   TICKET_SOURCE_ID,
   TICKET_STATUS,
 } from "@/lib/constants";
 import type {
   TicketCategory,
-  TicketPriority,
   TicketFormData,
 } from "@/types/ticket";
 import { Loader2 } from "lucide-react";
@@ -38,14 +36,12 @@ export function CreateTicketForm() {
   const { createEntity } = useEntityList({
     listId: "support-tickets-main",
   });
-  const showPriority = isAdminOrEditor(user);
 
   const [formData, setFormData] = useState<TicketFormData>({
     title: "",
     content: "",
     category: "bug",
     keywords: [],
-    priority: showPriority ? "medium" : undefined,
   });
 
   const [keywordInput, setKeywordInput] = useState("");
@@ -53,13 +49,18 @@ export function CreateTicketForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleAddKeyword = () => {
-    if (
-      keywordInput.trim() &&
-      !formData.keywords.includes(keywordInput.trim())
-    ) {
+    if (!keywordInput.trim()) return;
+
+    // Split by commas and process each keyword
+    const newKeywords = keywordInput
+      .split(',')
+      .map(k => k.trim())
+      .filter(k => k.length > 0 && !formData.keywords.includes(k));
+
+    if (newKeywords.length > 0) {
       setFormData({
         ...formData,
-        keywords: [...formData.keywords, keywordInput.trim()],
+        keywords: [...formData.keywords, ...newKeywords],
       });
       setKeywordInput("");
     }
@@ -86,21 +87,32 @@ export function CreateTicketForm() {
     setErrors({});
     setIsSubmitting(true);
 
+    // Process any remaining keywords in the input field
+    let finalKeywords = [...formData.keywords];
+    if (keywordInput.trim()) {
+      const remainingKeywords = keywordInput
+        .split(',')
+        .map(k => k.trim())
+        .filter(k => k.length > 0 && !finalKeywords.includes(k));
+
+      finalKeywords = [...finalKeywords, ...remainingKeywords];
+    }
+
     try {
       const entity = await createEntity({
         title: formData.title,
         content: formData.content,
-        keywords: formData.keywords,
+        keywords: finalKeywords,
         metadata: {
           status: TICKET_STATUS.OPEN,
           category: formData.category,
-          priority: showPriority ? formData.priority || null : null,
+          priority: null,
         },
       });
 
       if (entity) {
         toast.success("Ticket created successfully!");
-        router.push(`/tickets/${entity.shortId}`);
+        router.push(getTicketPath({ title: entity.title, shortId: entity.shortId }));
       }
     } catch (error) {
       console.error("Error creating ticket:", error);
@@ -152,30 +164,6 @@ export function CreateTicketForm() {
           <p className="text-sm text-red-500">{errors.category}</p>
         )}
       </div>
-
-      {/* Priority (Admin/Editor only) */}
-      {showPriority && (
-        <div className="space-y-2">
-          <Label htmlFor="priority">Priority</Label>
-          <Select
-            value={formData.priority || "medium"}
-            onValueChange={(value) =>
-              setFormData({ ...formData, priority: value as TicketPriority })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TICKET_PRIORITY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
 
       {/* Description */}
       <div className="space-y-2">

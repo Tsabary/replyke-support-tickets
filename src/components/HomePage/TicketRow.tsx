@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useUser } from "@replyke/react-js";
 import { ArrowUp, MessageSquare } from "lucide-react";
-import { formatVoteCount, isAdminOrEditor, getTicketPath } from "@/lib/ticket-helpers";
+import {
+  formatVoteCount,
+  isAdminOrEditor,
+  getTicketPath,
+} from "@/lib/ticket-helpers";
 import { formatTimeAgo } from "@/lib/time-formatters";
 import { StatusBadge } from "../shared/StatusBadge";
 import { CategoryBadge } from "../shared/CategoryBadge";
@@ -19,26 +23,31 @@ export function TicketRow({ ticket }: TicketRowProps) {
   const { user } = useUser();
   const showPriority = isAdminOrEditor(user);
 
-  const voteCount = (ticket.upvotes?.length || 0) - (ticket.downvotes?.length || 0);
+  const voteCount =
+    (ticket.upvotes?.length || 0) - (ticket.downvotes?.length || 0);
+  // const mockVoteCount = Math.floor(Math.random() * 16); // Random vote count 0-15
   const commentCount = ticket.repliesCount || 0;
-  const ticketPath = getTicketPath({ title: ticket.title, shortId: ticket.shortId });
+  const ticketPath = getTicketPath({
+    title: ticket.title,
+    shortId: ticket.shortId,
+  });
 
   return (
     <Link
       href={ticketPath}
       className="group grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-4 py-2.5 border-b border-border hover:bg-muted/50 transition-colors text-sm"
     >
-      {/* Vote count */}
+      {/* Vote count - TEMPORARY MOCK FOR SCREENSHOT */}
       <div className="flex items-center gap-1.5 text-muted-foreground min-w-[50px]">
-        <div className={cn(
-          "flex items-center justify-center w-6 h-6 rounded",
-          voteCount > 0 ? "bg-success-muted text-success" : "bg-muted"
-        )}>
+        <div
+          className={cn(
+            "flex items-center justify-center w-6 h-6 rounded",
+            voteCount > 0 ? "bg-success-muted text-success" : "bg-muted"
+          )}
+        >
           <ArrowUp className="w-3.5 h-3.5" />
         </div>
-        <span className="font-medium text-xs">
-          {formatVoteCount(voteCount)}
-        </span>
+        <span className="font-medium text-xs">{voteCount}</span>
       </div>
 
       {/* Title and badges */}

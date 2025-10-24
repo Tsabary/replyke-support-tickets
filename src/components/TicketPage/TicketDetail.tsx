@@ -2,13 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEntity, useUser } from "@replyke/react-js";
+import { useEntity, useUser, useUpdateEntity } from "@replyke/react-js";
 import { StatusBadge } from "../shared/StatusBadge";
 import { CategoryBadge } from "../shared/CategoryBadge";
 import { PriorityBadge } from "../shared/PriorityBadge";
 import { VoteButtons } from "./VoteButtons";
 import { ResolveButton } from "./ResolveButton";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +33,8 @@ import {
   isTicketAuthor,
   getTicketPath,
 } from "@/lib/ticket-helpers";
+import { TICKET_PRIORITY_OPTIONS } from "@/lib/constants";
+import type { TicketPriority } from "@/types/ticket";
 import {
   MessageSquare,
   Calendar,
@@ -47,7 +56,10 @@ export function TicketDetail() {
   const router = useRouter();
   const { entity, deleteEntity } = useEntity();
   const { user } = useUser();
+  const updateEntity = useUpdateEntity();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
+  const [localPriority, setLocalPriority] = useState<TicketPriority | null>(null);
 
   if (!entity) {
     return (
@@ -75,6 +87,34 @@ export function TicketDetail() {
     }
   };
 
+  const handlePriorityChange = async (newPriority: TicketPriority) => {
+    if (!entity) return;
+
+    // Update local state immediately for instant UI feedback
+    setLocalPriority(newPriority);
+
+    try {
+      setIsUpdatingPriority(true);
+      await updateEntity({
+        entityId: entity.id,
+        update: {
+          metadata: {
+            ...entity.metadata,
+            priority: newPriority,
+          },
+        },
+      });
+      toast.success("Priority updated successfully");
+    } catch (error) {
+      console.error("Error updating priority:", error);
+      toast.error("Failed to update priority");
+      // Revert local state on error
+      setLocalPriority(metadata.priority);
+    } finally {
+      setIsUpdatingPriority(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Row: Edit/Delete buttons on top-right */}
@@ -84,52 +124,78 @@ export function TicketDetail() {
             {entity.title}
           </h1>
         </div>
-        {canEdit && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                router.push(
-                  `${getTicketPath({ title: entity.title, shortId: entity.shortId })}/edit`
-                )
-              }
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Admin-only priority selector */}
+          {showPriority && (
+            <Select
+              value={(localPriority || metadata.priority) || undefined}
+              onValueChange={(value) => handlePriorityChange(value as TicketPriority)}
+              disabled={isUpdatingPriority}
             >
-              <Edit className="w-3.5 h-3.5 mr-1.5" />
-              Edit
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={isDeleting}>
-                  {isDeleting ? (
-                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                  )}
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete
-                    the ticket and all its comments.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-red-500 hover:bg-red-600"
-                  >
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Set priority">
+                  {(localPriority || metadata.priority)
+                    ? TICKET_PRIORITY_OPTIONS.find((opt) => opt.value === (localPriority || metadata.priority))?.label
+                    : "Set priority"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {TICKET_PRIORITY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {canEdit && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  router.push(
+                    `${getTicketPath({ title: entity.title, shortId: entity.shortId })}/edit`
+                  )
+                }
+              >
+                <Edit className="w-3.5 h-3.5 mr-1.5" />
+                Edit
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={isDeleting}>
+                    {isDeleting ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    )}
                     Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete
+                      the ticket and all its comments.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Metadata Row: All in one compact line */}

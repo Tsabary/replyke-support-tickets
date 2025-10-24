@@ -23,7 +23,7 @@ export default function Home() {
   );
 
   const [filters, setFilters] = useState<TicketFiltersType>({
-    sortBy: "hot",
+    sortBy: "new",
     status: null,
     category: null,
     priority: null,
@@ -34,7 +34,7 @@ export default function Home() {
   // Fetch tickets whenever filters change
   useEffect(() => {
     const fetchFilters: any = {
-      sortBy: filters.sortBy || "hot",
+      sortBy: filters.sortBy || "new",
     };
 
     // Add metadata filters
