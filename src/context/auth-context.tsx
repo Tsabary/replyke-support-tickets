@@ -162,7 +162,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleGoogleLogin = async () => {
     try {
       window.location.href =
-        process.env.NEXT_PUBLIC_SERVER_URL + "/clients-auth/google";
+        process.env.NEXT_PUBLIC_SERVER_URL + "/internal/clients-auth/google";
     } catch (err: unknown) {
       handleError(err, "Failed to initiate Google login: ");
     }
@@ -171,7 +171,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const handleGithubLogin = async () => {
     try {
       window.location.href =
-        process.env.NEXT_PUBLIC_SERVER_URL + "/clients-auth/github";
+        process.env.NEXT_PUBLIC_SERVER_URL + "/internal/clients-auth/github";
     } catch (err: unknown) {
       handleError(err, "Failed to initiate GitHub login: ");
     }
